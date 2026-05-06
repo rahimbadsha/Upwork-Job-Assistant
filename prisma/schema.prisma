@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  keywords Keyword[]
+  jobs     Job[]
+  stats    Stat[]
+
+  @@index([email])
+}
+
+model Keyword {
+  id        String   @id @default(cuid())
+  text      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, text])
+  @@index([userId, isActive])
+}
+
+model Job {
+  id              String    @id @default(cuid())
+  upworkId        String    @unique
+  title           String
+  description     String    @db.Text
+  url             String
+  budget          String?
+  budgetMin       Float?
+  budgetMax       Float?
+  category        String?
+  country         String?
+  postedAt        DateTime
+  fetchedAt       DateTime  @default(now())
+  status          JobStatus @default(NEW)
+  matchedKeywords String[]
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, postedAt(sort: Desc)])
+  @@index([upworkId])
+}
+
+model Stat {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now()) @db.Date
+  jobsFetched Int      @default(0)
+  jobsViewed  Int      @default(0)
+  jobsSaved   Int      @default(0)
+  jobsSkipped Int      @default(0)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date(sort: Desc)])
+}
+
+enum JobStatus {
+  NEW
+  VIEWED
+  SAVED
+  SKIPPED
+  APPLIED
+}
